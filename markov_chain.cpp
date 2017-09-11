@@ -13,7 +13,7 @@ struct node{
    struct node* link[300];
 };
 
-struct node* root;
+struct node  *root,*combo_root;
 
 struct node* makeNode(){//create new node and initialise the elements.
    struct node* tmp=(struct node*)malloc(sizeof(struct node));
@@ -109,17 +109,37 @@ void testPass(int order){
 
 }
 
-void  insertNgram(string s,int sz,long long int wt){
+void  insertNgram(struct node* now,string s,int sz,long long int wt){
    
-    struct node* tmp=root;
+    struct node* tmp=now;
     for(int i=0;i<sz;i++){
         if(tmp->link[(int)s[i]]==NULL){
             tmp->link[(int)s[i]]=makeNode();
         }
        tmp=tmp->link[(int)s[i]];
        tmp->ct = tmp->ct +wt;
+       
     }
+    
+}
 
+void  insertNgram(struct node* now,string s,int sz,long long int wt1,long long int wt2){
+    cout<<"inserting "<<s<<" "<<wt1<<" "<<wt2<<endl;
+    struct node* tmp=now;
+    for(int i=0;i<sz;i++){
+        if(tmp->link[(int)s[i]]==NULL){
+            tmp->link[(int)s[i]]=makeNode();
+        }
+       tmp=tmp->link[(int)s[i]];
+       if(i==sz-1){
+       		tmp->ct = tmp->ct +wt1;
+       }
+       else{
+       		tmp->ct = tmp->ct +wt2;
+       }
+       cout<<"s[i]="<<s[i]<<" ct="<<tmp->ct<<endl;
+    }
+    
 }
 
 
@@ -134,7 +154,7 @@ void inputTrain(int order){
      
      for(int fno=0;fno<1;fno++){
        //file_name="input"+int2str(fno);
-       file_name="bansal_passwords/500-worst-passwords.txt/500-worst-passwords.txt";
+       file_name="input/dummy.txt";
        input.open(file_name.c_str(),ifstream::in);
        //fp=fopen(file_name.c_str(),"r");
         int tmp_ct=0;
@@ -146,7 +166,7 @@ void inputTrain(int order){
                  pass=dummy+pass;
                  for(int pos=0;pos <=(int)pass.size()-window_size;pos++){
                      window=pass.substr(pos,window_size);
-                     insertNgram(window,window_size,1LL);
+                     insertNgram(root,window,window_size,1LL);
                      //cout<<"window="<<window<<endl;
                  }
                tmp_ct++; 
@@ -159,36 +179,57 @@ void inputTrain(int order){
 
 }
 
-void printTree(string tmp,struct node * now,long long int  prev){
+void printTree(string tmp,struct node * now,string file_name){
      int f=0;
      for(int i=0;i<300;i++){
          if(now->link[i]!=NULL){
             f++;
-            printTree(tmp+(char)i,now->link[i],now->ct);
+            printTree(tmp+(char)i,now->link[i],file_name);
          }
      }
      if(!f){
         ofstream out;
-        out.open("output/tree.txt",ofstream::app);
-        cout<<tmp<<" "<<now->ct<<" "<<prev<<endl;
-        out<<tmp<<" "<<now->ct<<" "<<prev<<endl;
+        out.open(file_name.c_str(),ofstream::app);
+        cout<<tmp<<" "<<now->ct<<endl;
+        out<<tmp<<" "<<now->ct<<endl;
         out.close();
      }
      
      return ;
 
-
 }
+
+void trainFromTree(){
+	ifstream in;
+	in.open("output/tree.txt",ifstream::in);
+	string s;
+	long long int wt;
+	while(in>>s){
+	   in>>wt;
+	   insertNgram(combo_root,s,s.size(),wt);
+	}
+		
+
+	return;
+}
+
 
 
 int main(){
 	int order=3;
 	root=makeNode();
+	combo_root=makeNode();
 	inputTrain(order);
-	cout<<"callinf print\n";
+	cout<<"calling prints\n";
 	//printChains("",root);
-	printTree("",root,0LL);
-	testPass(order);	               
+	
+	cout<<"printing to output/tree.txt\n";
+	printTree("",root,"output/tree.txt");
+	cout<<"Training from tree\n";
+	trainFromTree();
+	cout<<"printing to output/combo_tree.txt\n";
+	printTree("",combo_root,"output/combo_tree.txt");
+	//testPass(order);	               
         
 return 0;
 }
